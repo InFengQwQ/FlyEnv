@@ -17,7 +17,7 @@ import {
   waitTime,
   writeFile
 } from '../Fn'
-import { isLinux, isMacOS, isWindows } from '@shared/utils'
+import { appDebugLog, isLinux, isMacOS, isWindows } from '@shared/utils'
 import { closeSync, openSync, constants } from 'node:fs'
 import { access, readdir, rename, stat } from 'node:fs/promises'
 import { spawn } from 'node:child_process'
@@ -60,7 +60,11 @@ export type ServiceStartSpawnParams = {
   errFile?: string
   /** Redact executable arguments and environment values from the startup diagnostic log. */
   sensitive?: boolean
-  /** Keep wrapper processes attached when the platform launcher cannot survive CREATE_NEW_PROCESS_GROUP. */
+  /**
+   * Override the platform default. Windows defaults to `false` so the service gets an invisible
+   * console (and joins the worker's job, which keeps the worker alive until it exits); other
+   * platforms default to `true`.
+   */
   detached?: boolean
 }
 
@@ -458,7 +462,14 @@ export async function customerServiceStartExec(
 }
 
 /**
- * Start the service using the spawn detached: true method and directly return the process ID after startup.
+ * Start the service with spawn and directly return the process ID after startup.
+ *
+ * On Windows the child is not detached: `DETACHED_PROCESS` makes Windows ignore the
+ * `windowsHide` show state, so the service would get no console and every console program it
+ * starts (`nvidia-smi.exe`, `llama-server.exe`) would open its own window. A non-detached
+ * child gets a console that `SW_HIDE` keeps invisible, and the programs it starts share it.
+ * The child also belongs to this worker's job, so main keeps the worker out of the idle
+ * reaper while it runs.
  * @param param
  */
 export async function serviceStartSpawn(
@@ -504,8 +515,9 @@ export async function serviceStartSpawn(
 
   const doExec = (): Promise<{ 'APP-Service-Start-PID': string }> => {
     const cwd = param?.cwd ?? dirname(bin)
+    const detached = param.detached ?? !isWindows()
     const options: any = {
-      detached: param.detached ?? true,
+      detached,
       cwd,
       env: {
         ...env,
@@ -556,9 +568,25 @@ export async function serviceStartSpawn(
       // 如果 2 秒内没退出，我们认为启动基本成功
       timer = setTimeout(async () => {
         cp.off('exit', startupExitHandler) // 移除早期退出监听
+        const pid = cp.pid ? `${cp.pid}` : ''
+        // Windows 的非 detached 子进程属于本 worker 的 job，worker 退出会连带终止它。
+        // 启动与退出都通知 main：子进程存活期间该 worker 不参与空闲回收。
+        // 监听必须在写 PID 文件的 await 之前注册，否则这期间退出的子进程不会再触发 exit。
+        if (isWindows() && !detached && pid) {
+          const notify = (state: 'started' | 'exited') => {
+            try {
+              process.send?.({ type: 'service-child', state, pid })
+            } catch (error) {
+              void appDebugLog('[ServiceStart][service-child]', `${state} ${pid}: ${error}`)
+            }
+          }
+          notify('started')
+          cp.once('exit', () => notify('exited'))
+          // 防御性：exit 已经发生时不会再触发事件，补发一次让 main 立即释放 worker。
+          if (cp.exitCode !== null || cp.signalCode !== null) notify('exited')
+        }
 
-        if (cp.pid) {
-          const pid = `${cp.pid}`
+        if (pid) {
           try {
             if (pidPath) {
               await mkdirp(dirname(pidPath))
@@ -569,7 +597,7 @@ export async function serviceStartSpawn(
               'APP-On-Log': AppLog('error', `Save PID file failed: ${e}`)
             })
           }
-          cp.unref() // 让子进程独立运行，不挂钩主进程
+          cp.unref() // 从事件循环解绑；Windows 下仍留在 worker 的 job 内
           resolve({ 'APP-Service-Start-PID': pid })
         } else {
           reject(new Error(I18nT('fork.startFail')))

@@ -81,6 +81,8 @@ export class ForkItem {
   >()
   // 标记已退休的实际进程对象；迟到 spawn/message 不得让异常 worker 恢复或领取新租约。
   private readonly retiredChildren = new WeakSet<UtilityProcess>()
+  // Windows 非 detached 的服务子进程属于本 worker 的 job；退出前不参与空闲回收。
+  private readonly spawnedPids = new Set<string>()
   // 整个 ForkItem 销毁后不允许终态 hook 重新创建进程；正常 worker 退休仍允许后续重试。
   private disposed = false
   private readonly dedicated: boolean
@@ -209,10 +211,35 @@ export class ForkItem {
     this.lifecycle.unpin()
   }
 
+  /**
+   * Windows 的服务子进程在 worker 的 job 内：存活期间该 worker 不参与空闲回收。
+   * 其它退休路径（请求超时、生命周期取消、worker 错误、退出 drain 超时）仍会关闭 job
+   * 并直接终止服务；退出流程里 drain 超时早于 stopServer，数据库可能被硬杀。
+   * dns/ftp-srv 的服务是 worker 自身，由 ForkWorkerPolicy 管理，不走这里。
+   * 以 pid 为键：同一 worker 内 pid 复用且旧实例的 exited 迟到才会提前释放，实际不会发生。
+   */
+  private trackServiceChild(state: unknown, value: unknown) {
+    // dedicated worker 创建即 pin，unpin 会破坏插件运行时；其服务随 worker 关闭属预期。
+    if (this.dedicated) return
+    const pid = `${value ?? ''}`.trim()
+    if (!/^\d+$/.test(pid)) return
+    if (state === 'started') {
+      this.spawnedPids.add(pid)
+      this.pin()
+      return
+    }
+    if (state !== 'exited' || !this.spawnedPids.delete(pid)) return
+    if (!this.spawnedPids.size) this.unpin()
+  }
+
   onMessage(child: UtilityProcess, message: any) {
     // 在所有 bridge 前检查身份，否则旧 worker 的请求已入队而响应却被静默丢弃。
     if (child !== this.child || this.childExited || this.retiredChildren.has(child)) {
       this.windowsPrivilegeBridge?.detach(child)
+      return
+    }
+    if (message?.type === 'service-child') {
+      this.trackServiceChild(message.state, message.pid)
       return
     }
     try {
@@ -526,6 +553,7 @@ export class ForkItem {
     this.childExited = true
     this.pid = undefined
     this.loading = false
+    this.spawnedPids.clear()
     this.lifecycle.childExited()
     this.resolveLanguageAcks()
     this.settleCallbacks({
@@ -594,10 +622,14 @@ export class ForkItem {
     if (this.childExited) return
     this.retiredChildren.add(child)
     const pid = child?.pid || this.pid
-    logServiceStopBoundary('fork.main-worker-retired', { workerPid: pid })
+    logServiceStopBoundary('fork.main-worker-retired', {
+      workerPid: pid,
+      serviceChildren: this.spawnedPids.size
+    })
     this.childExited = true
     this.pid = undefined
     this.loading = false
+    this.spawnedPids.clear()
     this.lifecycle.childExited()
     // 主动销毁与自然退出共用 owner 清理，防止后台权限请求阻塞全局队列。
     this.resolveLanguageAcks()
