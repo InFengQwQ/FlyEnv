@@ -1,16 +1,19 @@
 import { MCP_ALL_TOOLS, MCP_RISKY_TOOLS } from './mcpToolCatalog'
-import type { PluginMCPDeclaration } from './plugin/PluginMCP'
+import type { PluginMCPDeclaration, PluginMCPTool } from './plugin/PluginMCP'
 
 export type MCPRuntimeTool = {
   name: string
   description: string
+  descriptionI18n?: PluginMCPTool['descriptionI18n']
   risky: boolean
   readOnly: boolean
   pluginId?: string
+  pluginName?: string
   inputSchema?: Record<string, unknown>
 }
 export type PluginMCPRegistration = {
   pluginId: string
+  pluginName?: string
   moduleId: string
   installGeneration: string
   declaration: PluginMCPDeclaration

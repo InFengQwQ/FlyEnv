@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { mkdtemp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { randomUUID } from 'node:crypto'
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv-provider.js'
@@ -332,7 +332,7 @@ test('unknown JSON commit is reported, then reconciled from disk before a depend
     atomic: {
       replace: async (path, bytes) => {
         await atomic.replace(path, bytes)
-        if (once && path.includes('/records/')) {
+        if (once && path.includes(`${sep}records${sep}`)) {
           once = false
           throw new AtomicWriteFailure('unknown')
         }
@@ -401,4 +401,114 @@ test('manifest exposes exactly five valid schemas and classifies MCP failures wi
   }
   assert.equal(memoryToolResult('forget', { outcome: 'already_deleted' }).isError, false)
   assert.equal(memoryToolResult('store', { outcome: 'success' }).isError, false)
+})
+
+test('internal universe returns every matching metadata record once without search wire truncation or bodies', async () => {
+  const f = await fixture()
+  try {
+    for (let i = 0; i < 25; i++)
+      assert.equal(
+        (
+          await f.engine.call('store', {
+            ...draft(),
+            title: `Universe ${i}`,
+            summary: 'x'.repeat(600)
+          })
+        ).outcome,
+        'success'
+      )
+    const result = await f.engine.universe({ scope: 'global' })
+    assert.equal(result.outcome, 'success')
+    assert.equal(result.data?.results.length, 25)
+    assert.equal(result.data?.truncated, false)
+    assert.equal(result.data?.next_cursor, undefined)
+    assert.ok(
+      result.data!.results.every(
+        (hit) => hit.summary.length === 600 && !('content' in hit) && !hit.metadata_omitted
+      )
+    )
+    assert.ok(Buffer.byteLength(JSON.stringify(result)) > PREVIEW_BUDGETS.responseBytes)
+    assert.ok((await f.engine.call('search', { scope: 'global' })).data!.results.length <= 20)
+    assert.equal(
+      (await f.engine.call('universe' as any, { scope: 'global' } as any)).error_code,
+      'invalid_method'
+    )
+    assert.equal(
+      (await f.engine.universe({ scope: 'global', limit: 1 } as any)).error_code,
+      'invalid_input'
+    )
+  } finally {
+    await f.clean()
+  }
+})
+
+test('internal universe uses normal scope/filter isolation and registered project resolution', async () => {
+  const f = await fixture()
+  try {
+    await f.engine.call('store', draft())
+    const local = await f.engine.call('store', {
+      ...draft(),
+      scope: 'project',
+      project_path: f.project,
+      title: 'Project neural map'
+    })
+    const project = (await f.engine.listProjects()).data![0]
+    const isolated = await f.engine.universeForProject(project.projectId, {})
+    assert.deepEqual(
+      isolated.data?.results.map((hit) => hit.id),
+      [local.data!.id]
+    )
+    assert.equal(
+      (await f.engine.universeForProject(project.projectId, { include_global: true })).data?.results
+        .length,
+      2
+    )
+    assert.equal(
+      (
+        await f.engine.universe({
+          scope: 'project',
+          project_path: f.project,
+          queries: ['Project neural']
+        })
+      ).data?.results.length,
+      1
+    )
+    assert.equal(
+      (await f.engine.universe({ scope: 'global', type: 'fact' })).data?.results.length,
+      0
+    )
+    assert.equal(
+      (await f.engine.universeForProject(project.projectId, { scope: 'global' } as any)).error_code,
+      'invalid_input'
+    )
+  } finally {
+    await f.clean()
+  }
+})
+
+test('universe skips an invalid record with a partial warning and preserves valid metadata', async () => {
+  const f = await fixture()
+  try {
+    const valid = await f.engine.call('store', draft())
+    await f.engine.close()
+    await writeFile(
+      join(f.root, 'global', 'records', `${randomUUID()}.json`),
+      'PRIVATE invalid record'
+    )
+    const restarted = new MemoryEngine(f.root)
+    try {
+      const result = await restarted.universe({ scope: 'global' })
+      assert.equal(result.outcome, 'partial')
+      assert.deepEqual(
+        result.data?.results.map((hit) => hit.id),
+        [valid.data!.id]
+      )
+      assert.ok(result.warnings?.length)
+      assert.equal(JSON.stringify(result).includes('PRIVATE'), false)
+    } finally {
+      await restarted.close()
+    }
+  } finally {
+    await f.clean()
+  }
 })

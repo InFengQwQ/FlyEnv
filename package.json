@@ -1,6 +1,6 @@
 {
   "name": "FlyEnv",
-  "version": "4.20.2",
+  "version": "4.21.0",
   "description": "All-In-One Full-Stack Environment Management Tool",
   "author": {
     "name": "Pengfei Xu",
@@ -19,6 +19,8 @@
     "test:homebrew-upgrade:app-smoke": "tsx scripts/homebrew-upgrade-app-smoke.ts",
     "test:renderer-operation-boundaries": "tsx scripts/renderer-operation-boundaries-test.ts",
     "test:language-project-ports": "tsx scripts/language-project-ports-test.ts",
+    "test:podman-list": "tsx scripts/podman-list-parse-test.ts",
+    "test:podman-connection": "tsx scripts/podman-connection-test.ts",
     "test:window-presentation": "tsx scripts/window-presentation-test.ts",
     "test:shell-init": "tsx scripts/shell-init-test.ts",
     "test:startup-documents": "tsx scripts/startup-documents-test.ts",
@@ -116,6 +118,7 @@
     "shell-env": "^4.0.2",
     "shiki": "^3.4.2",
     "tangerine": "^1.6.0",
+    "three": "^0.187.0",
     "undici": "^7.30.1",
     "vue": "^3.5.17",
     "vue-i18n": "^11.4.14",
@@ -170,6 +173,7 @@
     "@types/plist": "^3.0.5",
     "@types/qrcode": "^1.5.5",
     "@types/serve-handler": "^6.1.4",
+    "@types/three": "^0.187.0",
     "@types/yamljs": "^0.2.34",
     "@typescript-eslint/eslint-plugin": "^8.35.0",
     "@typescript-eslint/parser": "^8.35.0",

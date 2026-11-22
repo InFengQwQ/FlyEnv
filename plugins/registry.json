@@ -35,6 +35,7 @@
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "kafka",
       "name": "Kafka",
       "version": "0.1.5",
@@ -63,11 +64,12 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "6c089743f029d81d17f7c6de6fcc9d90fc244b8a861da0083d52f8e1713952bf"
+        "sha256": "200446b535440ba2b5d1d54319ef3e92e8d9277534bb692b9b55865dfb828fa5"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "llama-cpp",
       "name": "llama.cpp",
       "version": "0.2.11",
@@ -96,11 +98,12 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "9292b909e493349c38f2bd2b31a94db78b75cae198430324275c9084910990af"
+        "sha256": "0cf00be308b7b62aa7e0adabba8839ad4f7eda6cab15121c8ae6ea7e99112989"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "opensearch",
       "name": "OpenSearch",
       "version": "0.1.1",
@@ -129,11 +132,12 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "1e9f16137b1626877969478105b6693d62fff4afba59e38470940f3523616663"
+        "sha256": "17040976e0f52556847acf69fbb03d2827c6055f0825f202506aef33a2497b30"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "mssql",
       "name": "SQL Server",
       "version": "0.1.14",
@@ -160,11 +164,12 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "082cbfe11af3adf7707a8cee76d4ec95675aed3fef23e77168eea1e34d7db3ea"
+        "sha256": "5b890ddff05ec199d0582c01277cd720656f181fbaa3eeed3a729ee93f411e2b"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "dameng",
       "name": "Dameng DM8",
       "version": "0.1.9",
@@ -191,11 +196,12 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "143df57b368aabbef3a24736db6bea80c540816241e1736f1f10aa1eb741ca9b"
+        "sha256": "c21a74a81251069579d74318e716191261164277eabdb746bdfd025508edaa0f"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "command-shortcuts",
       "name": "Command Shortcuts",
       "version": "0.1.3",
@@ -224,11 +230,12 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "39425a59d45794959ba3720eb49fd8e6e7b87c6966f5099bd3579c9afb1300e0"
+        "sha256": "a05936e733b023956a43cd1b8ab564bef5cf43e2121af335f3ff8f05cad6d878"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "mysql-cluster",
       "name": "MySQL Cluster",
       "version": "0.1.17",
@@ -257,11 +264,12 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "4485cca0c5cf77f2ad1163a93640495193a4b087e798e4ff8637c35a22c5231f"
+        "sha256": "0c8dc78094b3da93ae47eb2581773ce1ecab129524ce6b9a1c27b718e92467da"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "mariadb-cluster",
       "name": "MariaDB Cluster",
       "version": "0.1.2",
@@ -290,14 +298,15 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "755260a0d377adab6249534e016dd6c5e8a9a91bbf3688923711cc48e680b8ae"
+        "sha256": "7b707a3ec9c516333ffc67fdd71d04cc0a4a4f7bb6490ffce592c151d37101e5"
       },
       "official": true
     },
     {
+      "apiVersion": 1,
       "id": "samwaf",
       "name": "SamWaf",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "description": {
         "en": "Open-source lightweight WAF. Sits in front of your local sites as a reverse proxy to block attacks, with a built-in web admin panel.",
         "zh": "开源轻量级网站防火墙。以反向代理方式前置保护本地站点、拦截攻击，内置 Web 管理面板。"
@@ -323,7 +332,40 @@
       ],
       "artifact": {
         "url": "",
-        "sha256": "93f60be9e9cfe9afebede5191969baf39ff2d1f2f3f1ce3b53e7fc25448ac1d6"
+        "sha256": "504c7f9e275ca7fcd786826a942cd7bddf437d964a5870f2cca4e70e339f84ef"
+      },
+      "official": true
+    },
+    {
+      "apiVersion": 2,
+      "id": "ai-memory",
+      "name": "AI Memory",
+      "version": "0.1.4",
+      "description": {
+        "en": "Persistent local memory for AI coding agents via MCP. Save and retrieve preferences, project knowledge, and development decisions across sessions. Includes global and project-scoped memories, a 3D memory map, search and editing, one-click setup for supported clients, plus backup, restore, and project path reassociation.",
+        "zh": "为 AI 编程助手提供持久化的本地记忆，通过 MCP 保存和检索用户偏好、项目知识及开发决策，减少跨会话重复说明。支持全局记忆与项目隔离、3D 星图浏览、记忆搜索与编辑、主流客户端一键接入，以及备份恢复和项目目录重关联。"
+      },
+      "author": "FlyEnv",
+      "module": {
+        "typeFlag": "ai-memory",
+        "moduleType": "ai",
+        "label": "AI Memory",
+        "isService": false,
+        "isTray": false,
+        "platform": [
+          "Windows",
+          "macOS",
+          "Linux"
+        ]
+      },
+      "platforms": [
+        "Windows",
+        "macOS",
+        "Linux"
+      ],
+      "artifact": {
+        "url": "",
+        "sha256": "331dfaa7dec29296abc346229a5be32b26d07d1c7686554cb917ba20cc5a0537"
       },
       "official": true
     }
