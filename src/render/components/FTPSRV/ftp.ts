@@ -81,7 +81,7 @@ export const FtpStore = defineStore('ftp-srv', {
           (key: string, res?: any) => {
             IPC.off(key)
             this.fetching = false
-            this.running = res?.data === true
+            this.running = res?.code === 0
             if (res?.code === 0) {
               resolve(true)
             } else {
