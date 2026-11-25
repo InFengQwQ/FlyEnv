@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "apiVersion": 1,
+      "id": "llama-cpp-fork",
+      "name": "llama.cpp",
+      "version": "0.2.13",
+      "description": {
+        "en": "Manage llama.cpp local inference runtimes and GGUF models.",
+        "zh": "管理 llama.cpp 本地推理运行时和 GGUF 模型。"
+      },
+      "author": "FlyEnv",
+      "module": {
+        "typeFlag": "llama-cpp",
+        "moduleType": "ai",
+        "label": "llama.cpp",
+        "asideIndex": 70,
+        "isService": true,
+        "isTray": false,
+        "platform": [
+          "Windows",
+          "macOS",
+          "Linux"
+        ]
+      },
+      "platforms": [
+        "Windows",
+        "macOS",
+        "Linux"
+      ],
+      "artifact": {
+        "url": "https://raw.githubusercontent.com/InFengQwQ/FlyEnv/plugin-source/llama-cpp-fork-0.2.13.flyenv-plugin",
+        "sha256": "efbaeed13282f3fef459d4d2397ca3ff3ce96d2e984ef02a7cc3b265e0afc50e"
+      }
+    }
+  ]
+}
